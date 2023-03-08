@@ -1,0 +1,39 @@
+name: Remove stale labels
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  remove-stale-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove stale labels
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const labels = [ 
+              'ready-for-internal-ci',
+              ]
+            //show labels on this PR
+            const prLabels = context.payload.pull_request.labels
+            // remove the label if it exists
+            for (const label of prLabels) {
+              if (labels.includes(label.name)) {
+                await github.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name: label.name
+                })
+              }
+            }
+            console.log(`Removed stale labels: ${labels} from PR #${context.issue.number}`) 
